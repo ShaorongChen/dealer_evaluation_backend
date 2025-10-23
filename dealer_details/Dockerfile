@@ -1,13 +1,20 @@
-FROM node:18.12.1-bullseye-slim
+FROM node:20-bookworm-slim AS builder
 
-RUN npm install -g npm@9.1.3
-
-ADD package.json .
-ADD server.js .
-ADD utils/dealers.json /utils/dealers.json
-
+# Stage 1: Build dependencies
+WORKDIR /app
+COPY package.json .
 RUN npm install
 
-EXPOSE 8080
+# Stage 2: Copy application code
+COPY server.js server.js
+COPY utils/dealers.json utils/dealers.json
 
-CMD [ "npm", "start" ]
+# Stage 3: Final image
+FROM node:22-bookworm-slim
+
+WORKDIR /app
+COPY --from=builder /app/node_modules /app/node_modules
+COPY . .
+
+EXPOSE 8080
+CMD ["npm", "start"]
